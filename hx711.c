@@ -1,5 +1,6 @@
 #include "hx711.h"
 #include "hx711Config.h"
+#include "flash.h" 
 #if (_HX711_USE_FREERTOS == 1)
 #include "cmsis_os.h"
 #define hx711_delay(x)    osDelay(x)
@@ -110,10 +111,12 @@ void hx711_tare(hx711_t *hx711, uint16_t sample)
     hx711_delay(5);
   }
   hx711->offset = (int32_t)(ave / sample);
+	Flash_Erase(HX711_OFFSET_ADDRESS); 
+	Flash_Write_Int(HX711_OFFSET_ADDRESS, hx711->offset); 
   hx711_unlock(hx711);
 }
 //#############################################################################################
-void hx711_calibration(hx711_t *hx711, int32_t noload_raw, int32_t load_raw, float scale)
+void hx711_calibration(hx711_t *hx711, int32_t noload_raw, int32_t load_raw, int32_t scale)
 {
   hx711_lock(hx711);
   hx711->offset = noload_raw;
@@ -121,7 +124,7 @@ void hx711_calibration(hx711_t *hx711, int32_t noload_raw, int32_t load_raw, flo
   hx711_unlock(hx711);
 }
 //#############################################################################################
-float hx711_weight(hx711_t *hx711, uint16_t sample)
+int32_t hx711_weight(hx711_t *hx711, uint16_t sample)
 {
   hx711_lock(hx711);
   int64_t  ave = 0;
@@ -131,17 +134,17 @@ float hx711_weight(hx711_t *hx711, uint16_t sample)
     hx711_delay(5);
   }
   int32_t data = (int32_t)(ave / sample);
-  float answer =  (data - hx711->offset) / hx711->coef;
+  int32_t answer =  (data - hx711->offset) / hx711->coef;
   hx711_unlock(hx711);
   return answer;
 }
 //#############################################################################################
-void hx711_coef_set(hx711_t *hx711, float coef)
+void hx711_coef_set(hx711_t *hx711, int32_t coef)
 {
   hx711->coef = coef;  
 }
 //#############################################################################################
-float hx711_coef_get(hx711_t *hx711)
+int32_t hx711_coef_get(hx711_t *hx711)
 {
   return hx711->coef;  
 }
